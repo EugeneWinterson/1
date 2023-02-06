@@ -63,7 +63,8 @@ public class SendSaySendService {
     @PostConstruct
     @Transactional(timeout = 12000)
     String doRequest() throws IOException {
-        URL url = new URL("http://api.sendsay.ru/");
+        URL url = new URL("https://api.sendsay.ru/general/api/v100/json/uralsib?apiversion=100&json=1&request.id=777"
+               + "&request={\"action\":\"login\",\"login\":\"uralsib\",\"passwd\":\"hi7Diqu\"}";
         HttpURLConnection con = (HttpURLConnection) url.openConnection();
         con.setRequestMethod("GET");
         con.setRequestProperty("Content-Type", "application/json");
