@@ -1,90 +1,57 @@
-package ru.usb.msbemailsendsay.service;
+package ru.usb.springbootcbrfmpr.Service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationConfig;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
-import ru.usb.email.ObjectFactory;
-import ru.usb.email.Request;
-import ru.usb.msbemailsendsay.entity.IntEmail;
-import ru.usb.msbemailsendsay.entity.TemplateCodeEntity;
-import ru.usb.msbemailsendsay.repository.IntEmailRepository;
-import ru.usb.msbemailsendsay.repository.TemplateCodeRepository;
+import ru.usb.springbootcbrfmpr.Model.PostSendData;
+import ru.usb.springbootcbrfmpr.Model.SendSayLoginBody;
 
 import javax.annotation.PostConstruct;
+import javax.xml.bind.JAXBContext;
 import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.ProtocolException;
-import java.net.URL;
-import java.util.List;
+import java.net.URISyntaxException;
+import java.util.Objects;
 
 @Service
-@EnableScheduling
 @Slf4j
-public class SendSaySendService {
-
-    @Autowired
-    IntEmailRepository intEmailRepository;
-    @Autowired
-    TemplateCodeRepository templateCodeRepository;
+public class Test {
     @Autowired
     RestTemplate restTemplate;
 
-    @Scheduled(cron = "${cron.send}")
-    void startByCron(){
-        try {
-       List<IntEmail> newRecords = intEmailRepository.findIntEmailByStatusEquals("NEW");
-       List<TemplateCodeEntity> templates = templateCodeRepository.findDistinctByStatusIsOrderByTemplateCodeAsc("NEW");
-       templates.forEach(templateCodeEntity -> {
-           String template = templateCodeEntity.getTemplateCode();
-           List<IntEmail> recordsByTemplate = intEmailRepository.findIntEmailByStatusEqualsAndTemplateCode("NEW",
-                   template);
-           recordsByTemplate.forEach(record -> {
-               issueSend(record);
-           });
-
-       });
-        //POST SENDSAY
-        //INSERT STATUS
-    } catch (Exception e) {
-            Request request = new ObjectFactory().createRequest();
-
-
-        }
-    }
-
     @PostConstruct
-    @Transactional(timeout = 12000)
-    String doRequest() throws IOException {
-        URL url = new URL("https://api.sendsay.ru/general/api/v100/json/uralsib?apiversion=100&json=1&request.id=777"
-               + "&request={\"action\":\"login\",\"login\":\"uralsib\",\"passwd\":\"hi7Diqu\"}";
-        HttpURLConnection con = (HttpURLConnection) url.openConnection();
-        con.setRequestMethod("GET");
-        con.setRequestProperty("Content-Type", "application/json");
-        con.setConnectTimeout(5000);
-        con.setReadTimeout(5000);
-        con.setInstanceFollowRedirects(false);
-        int status = con.getResponseCode();
-        return  String.valueOf(status);
+    String doRequest() throws IOException, URISyntaxException {
+        String request = "?apiversion=100&json=1&request.id=777&request={%22action%22:%22login%22,%22login%22:%22uralsib%22,%22passwd%22:%22hi7Diqu%22}";
+        String url = "https://api.sendsay.ru/";
+        ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.enable(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT);
+        SendSayLoginBody sendSayLoginBody = mapper.readValue(response.getBody(), SendSayLoginBody.class);
+        if (Objects.equals(response.getStatusCode(), HttpStatus.OK)) {
+            log.info("sendsay connect = true");
+            issueSend(response);
+        }
 
-       /* HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        String fooResourceUrl = "https://api.sendsay.ru/general/api/v100/json/uralsib?apiversion=100&json=1&request.id=777";
-               // "&request={\"action\":\"login\",\"login\":\"uralsib\",\"passwd\":\"hi7Diqu\"}";
-        HttpEntity<String> request = new HttpEntity<>("{\"12\":\"12\"}", headers);
-
-        String doRequest =  restTemplate.getForObject(fooResourceUrl, String.class);
-        log.info("Answer: {}", doRequest);
-        return  doRequest;*/
+        return String.valueOf(response);
     }
-    private void issueSend(IntEmail record) {
 
+    private void issueSend(ResponseEntity<String> response) throws JsonProcessingException {
+        ObjectMapper mapper = new JsonMapper();
+
+        mapper.writeValueAsString(createPostRequest(response));
+    }
+
+    PostSendData createPostRequest(ResponseEntity<String> response) {
+        PostSendData jsonRequest = new PostSendData();
+
+        jsonRequest.setApikey(response.toString());
+        return  jsonRequest;
     }
 }
