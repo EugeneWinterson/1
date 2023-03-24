@@ -1,0 +1,15 @@
+deliv
+
+request={"apikey":"18Xu0aleoJerjUz5eJNwK-dxJxo12qiivkXwPxjXxAp_K1oeun_DV54DgD_C4pdST3EsU","action":"stat.uni","result":"response","select":["issue.track.id","deliv.issue.dt","deliv.letter.custid(client.id)","deliv.letter.custid(client.inn)","deliv.letter.custid(client.treatmentcode)"],"filter":[{"a":"deliv.issue.dt","op":">=","v":"current - 1 day"},{"a":"deliv.letter.custid(client.stream)","op":"==","v":"MSB"}]}
+
+read
+
+request={"apikey":"18Xu0aleoJerjUz5eJNwK-dxJxo12qiivkXwPxjXxAp_K1oeun_DV54DgD_C4pdST3EsU","action":"stat.uni","result":"response","select":["issue.track.id","read.issue.dt","read.letter.custid(client.id)","read.letter.custid(client.inn)","read.letter.custid(client.treatmentcode)"],"filter":[{"a":"read.issue.dt","op":">=","v":"current - 1 day"},{"a":"read.letter.custid(client.stream)","op":"==","v":"MSB"}]}
+
+click
+
+request={"apikey":"18Xu0aleoJerjUz5eJNwK-dxJxo12qiivkXwPxjXxAp_K1oeun_DV54DgD_C4pdST3EsU","action":"stat.uni","result":"response","select":["issue.track.id","click.issue.dt","click.letter.custid(client.id)","click.letter.custid(client.inn)","click.letter.custid(client.treatmentcode)"],"filter":[{"a":"click.issue.dt","op":">=","v":"current - 1 day"},{"a":"click.letter.custid(client.stream)","op":"==","v":"MSB"}]}
+
+unsub
+
+request={"apikey":"18Xu0aleoJerjUz5eJNwK-dxJxo12qiivkXwPxjXxAp_K1oeun_DV54DgD_C4pdST3EsU","action":"stat.uni","result":"response","select":["issue.track.id","unsub.issue.dt","unsub.letter.custid(client.id)","unsub.letter.custid(client.inn)","unsub.letter.custid(client.treatmentcode)"],"filter":[{"a":"unsub.issue.dt","op":">=","v":"current - 1 day"},{"a":"unsub.letter.custid(client.stream)","op":"==","v":"MSB"}]}
