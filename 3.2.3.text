@@ -1,0 +1,104 @@
+3.2.3	Реализовать считывание данных из топика Kafka и обновление данных ЭА при необходимости.
+Требования к топику kafka представлены на странице https://confluence.uralsib.ru/pages/viewpage.action?pageId=152434714 
+Пример сообщения:
+ 
+На стороне ЭА необходимо реализовать микросервис, который будет считывать сообщения kafka и обновлять данные, пришедшие от ЦП, о действующем паспорте ФЛ.
+  
+  
+1 – обновление производится, если одновременно выполняются условия:
+•	Атрибут OID не null.
+•	Есть паспорт с атрибутами:
+o	passportType=RF_PASSPORT
+o	passportStatus=valid
+•	По такому паспорту есть значения, отличные от null по атрибутам:
+o	series
+o	number
+o	issueDate
+o	issuedBy
+o	issueId
+Иначе условия не выполняются, обновление не производится, к следующим шагам не переходить.
+2 – искать ДФЛ по OID.
+Выполнить поиск по OID:
+Искать записи в таблице person_ext_id_link, где Ext_system=’ esiagu’ и ext_id равен значению атрибута OID из сообщения kafka.
+Если записей не найдено, обновление не производится, к следующим шагам не переходить.
+Если запись найдена, переходить к шагу 3, потребуется значение поля person_id.
+3 – сверить данные паспорта, пришедшие от ЦП с текущей версией паспорта.
+По person_id, найденном на шаге 2, выполнить поиск текущей версии паспорта РФ:
+Искать записи в таблице person_doc, где в поле info в "docType" атрибут "code": "passportRF" и значение в поле person_id= person_id, найденном на шаге 2.
+ID найденной записи таблицы person_doc потребуются для дальнейших шагов.
+Если записи не найдены, переходить к шагу 4.3. 
+Если запись найдена, сверить значения атрибутов, полученных из kafka со значениями атрибутов, хранимых в поле «info»:
+Атрибут ЦП	Атрибут "docProperties" поля info таблицы person_doc 
+series	"series"
+number	"number"
+issueDate	"issueddate"
+issuedBy	"issuedby"
+issueId	"issuedcode"
+Если по всем перечисленным атрибутам значения совпадают, переходить к шагу 4.2.
+Иначе переходить к шагу 4.1.
+4 – сформировать json для поля info.
+Заполнение атрибутов в зависимости от условий:
+Атрибут	4.1	4.3	4.2
+  "user"	null, константа
+  "docStatus"	valid, константа
+  "objectStatus"	actual, константа
+  "objectRelations"	null, константа
+  "externalPersonId"	Значение атрибута oid топика kafka
+"docType": {}			
+"code"	passportRF, константа
+"name"	Паспорт гражданина РФ, константа
+"codeCrif"	null, константа
+"codeIbso"	null, константа
+"codeSugar"	null, константа
+"generated"	true, константа
+"codeSiebel"	Паспорт гражданина РФ, константа
+"supportArchiveFiles"	false, константа
+"docProperties": {}			
+    "number"	Из значения атрибута number сообщения kafka	Из предыдущей версии документа
+    "series"	Из значения атрибута series сообщения kafka	
+    "issuedby"	Из значения атрибута issuedBy сообщения kafka	
+    "issuedcode"	Из значения атрибута issueId сообщения kafka	
+    "issueddate"	Из значения атрибута issueDate сообщения kafka	
+"confirmedbydigitalprofile"	true
+Пример json:
+{
+  "user": null,
+  "docType": {
+    "code": "passportRF",
+    "name": "Паспорт гражданина РФ",
+    "codeCrif": null,
+    "codeIbso": null,
+    "codeSugar": null,
+    "generated": true,
+    "codeSiebel": "Паспорт гражданина РФ",
+    "supportArchiveFiles": false
+  },
+  "docStatus": "valid",
+  "objectStatus": "actual",
+  "docProperties": {
+    "number": "892630",
+    "series": "4964",
+    "issuedby": "ОУФМС России",
+    "issuedcode": "330-302",
+    "issueddate": "2017-09-30",
+    "confirmedbydigitalprofile": true
+  },
+  "objectRelations": null,
+  "externalPersonId": "10031415"
+}
+5 – добавить новую версию паспорта.
+В person_doc_version добавляется новая запись, запись в таблице person_doc обновляется (либо добавляется новая, если записи не было).
+Поле таблиц	Значение person_doc_version	Значение person_doc 
+changed_autor	user_admin	user_admin
+changed_date_time	Заполняется system datetime	Заполняется system datetime
+created_autor	user_admin	Не меняется, если же записи не было – «user_admin»
+created_date_time	Заполняется system datetime	Не меняется, если же записи не было заполняется system datetime
+version	0	Заполняется значением поля person_doc_version таблицы person_doc_version
+doc_link_type	PERSON	PERSON
+files	[]	Заполняется значением поля files таблицы person_doc_version
+info	Сохраняется json, сформированный на предыдущем шаге	Заполняется значением поля info таблицы person_doc_version
+person_id	-	Не меняется, если же записи не было заполняется ID ДФЛ
+product_id	-	Не меняется, если же записи не было, null
+person_doc_id	Соответствует полю ID таблицы person_doc	-
+person_doc_version	Соответствует ID таблицы person_doc	-
+Обеспечить журналирование каждого из пяти этапов обновления (при условии их прохождения) в ELASTIC по аналогии с текущей реализацией:
