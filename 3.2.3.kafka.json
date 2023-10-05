@@ -1,0 +1,35 @@
+{
+   "oid": "10031415",
+   "id": "91899952b06c4cc89746d38b2c8c72f3",
+   "status": "verified_by_validate",
+   "departmentDoc": "ГУВМ МВД России",
+   "receiptDocDate": "1574237502",
+   "validateDateDoc": "1574237613",
+   "version": 1,
+   "createdOn": 1582187411649,
+   "updatedOn": 1582187411649,
+   "firstName": "Мария",
+   "middleName": "Петровна",
+   "lastName": "Менделеева",
+   "birthDate": "02.09.2000",
+   "history": [
+      {
+         "passportType": "RF_PASSPORT",
+         "series": "65 02",
+         "number": "650230",
+         "issueDate": "02.09.2000",
+         "issuedBy": "Гагаринским отделением милиции №5 по г. Москве МВД России",
+         "issueId": "503-078",
+         "passportStatus": "invalid",
+         "invalidityReason": "replaced"
+      },
+      {
+         "passportType": "FRGN_PASS",
+         "series": "12",
+         "number": "3444444",
+         "issueDate": "09.02.2018",
+         "issuedBy": "ФМС 404",
+         "passportStatus": "valid"
+      }
+   ]
+}
